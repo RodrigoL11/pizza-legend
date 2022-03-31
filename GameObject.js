@@ -9,15 +9,53 @@ class GameObject {
       gameObject: this,
       src: config.src || "/images/characters/people/hero.png",
     });
+
+    this.behaviorLoop = config.behaviorLoop || [];
+    this.behaviorLoopIndex = 0;
+
+    this.talking = config.talking || [];
+
   }
 
   mount(map) {
-    console.log('mounting')
+    console.log("mounting!")
     this.isMounted = true;
     map.addWall(this.x, this.y);
+
+    //If we have a behavior, kick off after a short delay
+    setTimeout(() => {
+      this.doBehaviorEvent(map);
+    }, 10);
+
   }
 
   update() {
+  }
+
+  async doBehaviorEvent(map) {
+
+    //Dont do anything if there is a more important cutscene or 
+    //I dont have config do to anything anyway
+    if (map.isCutscenePlaying || this.behaviorLoop.length === 0 || this.isStanding){
+      return;
+    }
+
+    //Setting up our event with relevant info
+    let eventConfig = this.behaviorLoop[this.behaviorLoopIndex];
+    eventConfig.who = this.id;
+
+    //Create an event instace out of our next event config
+    const eventHandler = new OverworldEvent({ map, event: eventConfig });
+    await eventHandler.init();
+
+    //Setting the next event to fire
+    this.behaviorLoopIndex++;
+    if (this.behaviorLoopIndex === this.behaviorLoop.length) {
+      this.behaviorLoopIndex = 0;
+    }
+
+    //Do it again!
+    this.doBehaviorEvent(map)
 
   }
 }
